@@ -1,0 +1,22 @@
+{
+  "name": "height-to-normal-map",
+  "version": "0.0.1",
+  "description": "Generate normal map from height map",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lachoseparis/height-to-normal-map.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lachoseparis/height-to-normal-map/issues"
+  },
+  "homepage": "https://github.com/lachoseparis/height-to-normal-map#readme"
+}
