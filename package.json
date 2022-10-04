@@ -3,10 +3,18 @@
   "version": "0.0.1",
   "description": "Generate normal map from height map",
   "main": "index.js",
+  "type": "module",
   "directories": {
     "lib": "lib"
   },
   "scripts": {
+    "dev:front": "vite",
+    "build": "vite build && npm run copy-sources",
+    "copy-sources": "copyfiles './sources/**/*' ./files",
+    "build:front": "vite build",
+    "save": "npm-run-all --parallel serve copy-images",
+    "copy-images": "node ./lib/launcher.js",
+    "serve": "serve ./dist -l 2000",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,5 +26,14 @@
   "bugs": {
     "url": "https://github.com/lachoseparis/height-to-normal-map/issues"
   },
-  "homepage": "https://github.com/lachoseparis/height-to-normal-map#readme"
+  "homepage": "https://github.com/lachoseparis/height-to-normal-map#readme",
+  "dependencies": {
+    "copy-dir": "^1.3.0",
+    "copyfiles": "^2.4.1",
+    "puppeteer": "^18.0.5",
+    "serve": "^14.0.1",
+    "serve-handler": "^6.1.3",
+    "three": "^0.145.0",
+    "vite": "^3.1.4"
+  }
 }
