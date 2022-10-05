@@ -9,16 +9,17 @@
   },
   "scripts": {
     "dev:front": "vite",
-    "build": "vite build && npm run copy-sources",
-    "copy-sources": "copyfiles './sources/**/*' ./files",
+    "build": "npm run build:front && npm run build:launcher && npm run copy-sources",
     "build:front": "vite build",
-    "save": "npm-run-all --parallel serve copy-images",
+    "build:launcher": "rollup lib/launcher.js --file dist/launcher.js",
+    "copy-sources": "copyfiles './sources/**/*' ./dist",
     "copy-images": "node ./lib/launcher.js",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "prettier:code": "prettier \"**/*.js\"",
     "prettier:other": "prettier \"**/*.{md,css,scss,yaml,yml}\"",
-    "testlint": "eslint lib/**/*.js"
+    "testlint": "eslint lib/**/*.js",
+    "example": "node dist/launcher.js"
   },
   "husky": {
     "hooks": {

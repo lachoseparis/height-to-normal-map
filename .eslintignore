@@ -2,7 +2,7 @@
 .cache
 **/coverage/**
 **/exports/**
-**/files/**
+**/dist/**
 **/node_modules/**
 **/build/**
 **/dist/**
