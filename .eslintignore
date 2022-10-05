@@ -1,0 +1,10 @@
+.vscode
+.cache
+**/coverage/**
+**/exports/**
+**/files/**
+**/node_modules/**
+**/build/**
+**/dist/**
+.eslintrc.cjs
+.prettierc.cjs

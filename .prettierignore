@@ -1,0 +1,6 @@
+coverage
+testApp
+dist
+build
+.cache
+node_modules

@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   root: 'lib',
   build: {
     outDir: '../files',
-    emptyOutDir: true
-  }
+    emptyOutDir: true,
+  },
 });
