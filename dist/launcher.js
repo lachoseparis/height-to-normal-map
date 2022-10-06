@@ -209,6 +209,11 @@ const execute = async () => {
   process.exit(); // eslint-disable-line
 };
 
-if (process.env.npm_command === 'test') execute();
+console.info('process.env.npm_command', process.env);
+
+if (process.env.npm_command === 'test') {
+  console.info('running test');
+  execute();
+}
 
 export { execute as default, execute };
