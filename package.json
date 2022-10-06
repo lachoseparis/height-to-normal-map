@@ -23,7 +23,7 @@
     "prettier:other": "prettier \"**/*.{md,css,scss,yaml,yml}\"",
     "testlint": "eslint lib/**/*.js",
     "example": "node dist/launcher.js",
-    "test": "node ./test.js -i ./example/sources -o ./example/exports"
+    "test": "node ./test.js -i ./example/heightmaps -o ./example/exports"
   },
   "husky": {
     "hooks": {
