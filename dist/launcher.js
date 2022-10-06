@@ -68,17 +68,20 @@ const parseFolder = async (folder, oImages = []) => {
 
 const createFolderFromPathFile = async (filePath) => {
   const path = filePath.split('/').slice(0, -1).join('/');
-  console.info('--- path', path);
   const isPath = await fsExists(path);
   if (!isPath) {
     await mkdir(path, { recursive: true });
   }
 };
 
+const deleteTempFolder = () => {
+  const pathTemp = path.join(__dirname, './temp');
+  rimraf.sync(pathTemp);
+};
+
 const copySourcesToTemp = async (sources) => {
   const pathTemp = path.join(__dirname, './temp');
   rimraf.sync(pathTemp);
-  console.info('pathTemp', pathTemp, __dirname);
   await mkdir(pathTemp);
 
   const pathSources = path.resolve(process.cwd(), sources);
@@ -94,9 +97,7 @@ const copySourcesToTemp = async (sources) => {
 const copyToFinalFolder = async (dest) => {
   const pathExports = path.join(__dirname, './exports');
   const pathDest = path.resolve(process.cwd(), dest);
-  //await mkdir(pathDest);
-
-  console.info('pathDest', pathDest);
+  rimraf.sync(pathDest);
   try {
     const results = await copy(`${pathExports}`, pathDest);
     console.info('Copied ' + results.length + ' files');
@@ -109,46 +110,68 @@ const copyToFinalFolder = async (dest) => {
 const program = new Command();
 
 program.option('-p, --port <number>', 'port number', 3896);
-program.option('-s, --sources <string>', 'path to sources images files', './sources');
-program.option('-d, --destination <string>', 'path to destination images files', './exports');
+program.option('-i, --input <string>', 'path to sources images', './sources');
+program.option('-o, --output <string>', 'path to destination images', './exports');
+program.option(
+  '-s, --strength <number>',
+  'Strength of the NormalMap renderer. Value between 0.01 to 5',
+  1
+);
+program.option(
+  '-l, --level <number>',
+  'Level of the NormalMap renderer. Value between 4 to 10',
+  8.5
+);
+program.option(
+  '-bs, --blursharp <number>',
+  'Add blur or sharp effect to the normal map. Value between -32 (very blurry) and 32 (vary sharp)',
+  1
+);
+program.option('-ir, --invertedRed <boolean>', 'Invert red value', false);
+program.option('-ig, --invertedGreen <boolean>', 'Invert green value', false);
+program.option('-ih, --invertedHeight <boolean>', 'Invert height value', false);
 
 program.parse(process.argv);
 
 const options = program.opts();
+const {
+  port,
+  input,
+  output,
+  strength,
+  level,
+  blursharp,
+  invertedRed,
+  invertedGreen,
+  invertedHeight,
+} = options;
 
-const PORT = options.port || 3456;
-
-const BASE_SOURCES = options.sources;
-
-const DEST = options.destination;
-
-await copySourcesToTemp(BASE_SOURCES);
+await copySourcesToTemp(input);
 
 const server = http.createServer((request, response) => {
   return handler(request, response, {
     public: './dist/',
   });
 });
-server.listen(PORT, () => {
-  console.log(`Running at http://localhost:${PORT}`);
+server.listen(port, () => {
+  console.log(`Running at http://localhost:${port}`);
 });
 
 const images = await parseTempFolder(); // eslint-disable-line
 console.info('images found', images.length);
 const browser = await puppeteer.launch();
 const page = await browser.newPage();
-await page.goto(`http://localhost:${PORT}`);
-// await page.waitForSelector('img');
-// const html = await page.$('img');
-// console.info('html', html);
-// await html.screenshot({ path: 'exports/image2.png' });
+await page.goto(`http://localhost:${port}`);
+
 const transformAndSaveImage = async (image) => {
   const { src, exportPath } = image;
-  console.info('path', src, exportPath);
   await createFolderFromPathFile(exportPath);
-  await page.evaluate(async (p) => {
-    await transformSource(p); // eslint-disable-line
-  }, src);
+  await page.evaluate(
+    async (opt) => {
+      await transformSource(opt); // eslint-disable-line
+    },
+    { src, strength, level, blursharp, invertedRed, invertedGreen, invertedHeight }
+  );
   await page.waitForSelector('img');
   const html2 = await page.$('img');
   await html2.screenshot({
@@ -164,12 +187,12 @@ const transformImages = async () => {
   }
 };
 
-rimraf.sync('./exports');
-await mkdir('./exports');
+// rimraf.sync('./exports');
+// await mkdir('./exports');
 await transformImages();
 
-await copyToFinalFolder(DEST);
-
+await copyToFinalFolder(output);
+deleteTempFolder();
 await browser.close();
 
 process.exit(); // eslint-disable-line
