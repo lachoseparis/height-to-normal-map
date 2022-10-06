@@ -1,6 +1,6 @@
 {
   "name": "height-to-normal-map",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Generate normal map from height map",
   "main": "index.js",
   "type": "module",
