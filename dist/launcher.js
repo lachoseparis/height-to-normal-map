@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import handler from 'serve-handler';
 import http from 'http';
+import { Command } from 'commander';
 import { readdir, lstat, mkdir } from 'fs/promises';
 import fsExists from 'fs.promises.exists';
 import { promisify } from 'util';
@@ -9,8 +10,6 @@ import copy from 'recursive-copy';
 import rimraf from 'rimraf';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import 'node-fetch';
-import { Command } from 'commander';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
