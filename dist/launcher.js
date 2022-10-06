@@ -170,7 +170,6 @@ const transformAndSaveImage = async (image) => {
   const { src, exportPath } = image;
   await createFolderFromPathFile(exportPath);
   await page.waitForSelector('body');
-  console.info('find body !', src, exportPath);
   await page.evaluate(
     async (opt) => {
       console.info('options', opt);
@@ -209,5 +208,7 @@ const execute = async () => {
 
   process.exit(); // eslint-disable-line
 };
+
+if (process.env.npm_command === 'test') execute();
 
 export { execute as default, execute };
