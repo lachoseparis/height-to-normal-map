@@ -46,8 +46,21 @@
     "type": "git",
     "url": "git+https://github.com/lachoseparis/height-to-normal-map.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": {
+    "name": "@lachoseparis",
+    "url": "https://github.com/lachoseparis"
+  },
+  "maintainers": [
+    {
+      "name": "Julien Boudringhin",
+      "url": "https://github.com/misterdju"
+    },
+    {
+      "name": "Nicolas Chesné",
+      "url": "https://github.com/Norbz"
+    }
+  ],
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/lachoseparis/height-to-normal-map/issues"
   },
