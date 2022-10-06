@@ -1,6 +1,6 @@
 coverage
 testApp
-dist
+**/dist/**
 build
 .cache
 node_modules
