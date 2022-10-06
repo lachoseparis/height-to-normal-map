@@ -7,6 +7,9 @@
   "directories": {
     "lib": "lib"
   },
+  "bin": {
+    "height-to-normal-map": "height-to-normal-map"
+  },
   "scripts": {
     "dev:front": "vite",
     "build": "npm run build:front && npm run build:launcher",
