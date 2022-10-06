@@ -3,11 +3,44 @@
   "version": "0.0.1",
   "description": "Generate normal map from height map",
   "main": "index.js",
+  "type": "module",
   "directories": {
     "lib": "lib"
   },
+  "bin": {
+    "height-to-normal-map": "bin/height-to-normal-map.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:front": "vite",
+    "build": "npm run build:front && npm run build:launcher",
+    "build:front": "vite build",
+    "build:launcher": "rollup lib/launcher.js --file dist/launcher.js",
+    "copy-sources": "copyfiles './sources/**/*' ./dist",
+    "copy-images": "node ./lib/launcher.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "prettier:code": "prettier \"**/*.js\"",
+    "prettier:other": "prettier \"**/*.{md,css,scss,yaml,yml}\"",
+    "testlint": "eslint lib/**/*.js",
+    "example": "node dist/launcher.js",
+    "test": "node ./dist/launcher.js -i ./example/sources -o ./example/exports"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,md,css,scss,yaml,yml}": [
+      "prettier --write"
+    ],
+    "*.js": [
+      "eslint --fix"
+    ]
+  },
+  "engines": {
+    "node": ">=12.2.x",
+    "npm": ">=7.0.0"
   },
   "repository": {
     "type": "git",
@@ -18,5 +51,33 @@
   "bugs": {
     "url": "https://github.com/lachoseparis/height-to-normal-map/issues"
   },
-  "homepage": "https://github.com/lachoseparis/height-to-normal-map#readme"
+  "homepage": "https://github.com/lachoseparis/height-to-normal-map#readme",
+  "dependencies": {
+    "command-line-args": "^5.2.1",
+    "commander": "^9.4.1",
+    "copy-dir": "^1.3.0",
+    "copyfiles": "^2.4.1",
+    "fs.promises.exists": "^1.1.3",
+    "image-size": "^1.0.2",
+    "node-fetch": "^3.2.10",
+    "p-iteration": "^1.1.8",
+    "puppeteer": "^18.0.5",
+    "recursive-copy": "^2.0.14",
+    "rimraf": "^3.0.2",
+    "serve": "^14.0.1",
+    "serve-handler": "^6.1.3",
+    "three": "^0.145.0",
+    "vite": "^3.1.4"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.19.1",
+    "@babel/plugin-syntax-top-level-await": "^7.14.5",
+    "eslint": "^8.24.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-html": "^7.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "husky": "^8.0.1",
+    "prettier": "^2.7.1"
+  }
 }
