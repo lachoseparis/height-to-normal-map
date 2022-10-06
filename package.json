@@ -8,7 +8,7 @@
     "lib": "lib"
   },
   "bin": {
-    "height-to-normal-map": "height-to-normal-map"
+    "height-to-normal-map": "bin/height-to-normal-map"
   },
   "scripts": {
     "dev:front": "vite",
