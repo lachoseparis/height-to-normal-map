@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import handler from 'serve-handler';
 import http from 'http';
+import { Command } from 'commander';
 import { readdir, lstat, mkdir } from 'fs/promises';
 import fsExists from 'fs.promises.exists';
 import { promisify } from 'util';
@@ -9,8 +10,6 @@ import copy from 'recursive-copy';
 import rimraf from 'rimraf';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import 'node-fetch';
-import { Command } from 'commander';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -84,12 +83,8 @@ const copySourcesToTemp = async (sources) => {
   const pathTemp = path.join(__dirname, './temp');
   rimraf.sync(pathTemp);
   await mkdir(pathTemp);
-
-  const pathSources = path.resolve(process.cwd(), sources);
-  console.info('pathSources', pathSources, 'to', pathTemp);
   try {
-    const results = await copy(`${sources}`, pathTemp);
-    console.info('Copied ' + results.length + ' files');
+    await copy(`${sources}`, pathTemp);
   } catch (error) {
     console.error('Copy failed: ' + error);
   }
@@ -100,8 +95,7 @@ const copyToFinalFolder = async (dest) => {
   const pathDest = path.resolve(process.cwd(), dest);
   rimraf.sync(pathDest);
   try {
-    const results = await copy(`${pathExports}`, pathDest);
-    console.info('Copied ' + results.length + ' files');
+    await copy(`${pathExports}`, pathDest);
     rimraf.sync(pathExports);
   } catch (error) {
     console.error('Copy failed: ' + error);
@@ -140,8 +134,6 @@ program.parse(process.argv);
 
 const options = program.opts();
 
-console.info('options', options);
-
 const {
   port,
   input,
@@ -163,18 +155,14 @@ const server = http.createServer((request, response) => {
     public: getAbsoluteDistPath(),
   });
 });
-server.listen(port, () => {
-  console.log(`Running at http://localhost:${port}`);
-});
+server.listen(port);
 
 const transformAndSaveImage = async (image) => {
   const { src, exportPath } = image;
   await createFolderFromPathFile(exportPath);
   await page.waitForSelector('body');
-  console.info('find body !', src, exportPath);
   await page.evaluate(
     async (opt) => {
-      console.info('options', opt);
       await transformSource(opt); // eslint-disable-line
     },
     { src, strength, level, blursharp, invertedRed, invertedGreen, invertedHeight }
@@ -197,7 +185,7 @@ const transformImages = async () => {
 const execute = async () => {
   await copySourcesToTemp(input);
   images = await parseTempFolder(); // eslint-disable-line
-  console.info('images found', images.length);
+  console.info('transforming', images.length, 'images');
   if (images.length > 0) {
     browser = await puppeteer.launch();
     page = await browser.newPage();

@@ -1,6 +1,6 @@
 {
   "name": "height-to-normal-map",
-  "version": "0.0.1",
+  "version": "0.0.6",
   "description": "Generate normal map from height map",
   "main": "index.js",
   "type": "module",
@@ -23,7 +23,7 @@
     "prettier:other": "prettier \"**/*.{md,css,scss,yaml,yml}\"",
     "testlint": "eslint lib/**/*.js",
     "example": "node dist/launcher.js",
-    "test": "node ./dist/launcher.js -i ./example/sources -o ./example/exports"
+    "test": "node ./test.js -i ./example/heightmaps -o ./example/exports"
   },
   "husky": {
     "hooks": {
@@ -46,8 +46,21 @@
     "type": "git",
     "url": "git+https://github.com/lachoseparis/height-to-normal-map.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": {
+    "name": "@lachoseparis",
+    "url": "https://github.com/lachoseparis"
+  },
+  "maintainers": [
+    {
+      "name": "Julien Boudringhin",
+      "url": "https://github.com/misterdju"
+    },
+    {
+      "name": "Nicolas Chesné",
+      "url": "https://github.com/Norbz"
+    }
+  ],
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/lachoseparis/height-to-normal-map/issues"
   },
