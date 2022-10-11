@@ -4,9 +4,14 @@
 
 ## A tool to create normalmap images.
 
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/505236/195153145-ed186943-d69d-43bb-af59-b722bb77dfc2.jpg" />
+</p>
+
 You can use it as a cli tool or as a library.
 
-It uses [three.js]('https://threejs.org') to apply transform and is based on the work of [cpetry]('https://github.com/cpetry') and his [project]('https://github.com/cpetry/NormalMap-Online') 
+It uses [three.js]('https://threejs.org') and puppeteer to apply transform and is based on the work of [cpetry]('https://github.com/cpetry') and his [project]('https://github.com/cpetry/NormalMap-Online') 
 
 ### Using as a cli tool
 
@@ -15,7 +20,7 @@ It uses [three.js]('https://threejs.org') to apply transform and is based on the
 npm install -g height-to-normal-map
 ```
 
-### Usage :
+### Usage
 
 ```sh
 
