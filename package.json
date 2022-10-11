@@ -2,11 +2,12 @@
   "name": "height-to-normal-map",
   "version": "0.0.6",
   "description": "Generate normal map from height map",
-  "main": "index.js",
   "type": "module",
   "directories": {
-    "lib": "lib"
+    "lib": "lib",
+    "dist": "dist"
   },
+  "main": "./lib/HeightToNormal.js",
   "bin": {
     "height-to-normal-map": "bin/height-to-normal-map.js"
   },
