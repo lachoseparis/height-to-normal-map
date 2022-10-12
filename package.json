@@ -12,7 +12,7 @@
     "height-to-normal-map": "bin/height-to-normal-map.js"
   },
   "scripts": {
-    "dev:front": "vite",
+    "dev": "vite",
     "build": "npm run build:front && npm run build:launcher",
     "build:front": "vite build",
     "build:launcher": "rollup src/launcher.js --file dist/launcher.js",

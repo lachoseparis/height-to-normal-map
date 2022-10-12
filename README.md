@@ -1,12 +1,25 @@
 <div align="center">
-  <h1>Height to NormalMap</h1>
+  <h1>Height to Normal Map</h1>
 </div>
 
-## A tool to create normalmap images.
+## A tool to create normal maps.
+
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/505236/195153145-ed186943-d69d-43bb-af59-b722bb77dfc2.jpg" />
+</p>
 
 You can use it as a cli tool or as a library.
 
-It uses [three.js]('https://threejs.org') to apply transform and is based on the work of [cpetry]('https://github.com/cpetry') and his [project]('https://github.com/cpetry/NormalMap-Online') 
+Sources are based from the work of [cpetry](https://github.com/cpetry) and his project [NormalMap-Online](https://cpetry.github.io/NormalMap-Online/).
+
+The library uses [three.js](https://threejs.org) and [Puppeteer](https://github.com/puppeteer/puppeteer) to apply transforms.
+
+### Why
+
+We were working on a project which purpose was to show a large number of products in a 3d viewer. 
+To be able to treat all the images we had, we needed to develop a tool that was able to process batch images.
+This is what we done with this library.
 
 ### Using as a cli tool
 
@@ -15,7 +28,7 @@ It uses [three.js]('https://threejs.org') to apply transform and is based on the
 npm install -g height-to-normal-map
 ```
 
-### Usage :
+### Usage
 
 ```sh
 
