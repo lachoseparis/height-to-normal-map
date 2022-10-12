@@ -1,4 +1,4 @@
-import HeightToNormal from './HeightToNormal';
+import HeightToNormal from '../lib/HeightToNormal';
 import { convertCanvasToURL, loadImageSrc } from './utils/ImageCanvas';
 
 const transformSource = async (options) => {

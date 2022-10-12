@@ -8,3 +8,4 @@
 **/dist/**
 .eslintrc.cjs
 .prettierc.cjs
+vite.config.js
