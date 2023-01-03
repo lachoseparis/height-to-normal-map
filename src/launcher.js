@@ -16,6 +16,16 @@ program.option('-p, --port <number>', 'port number', 3896);
 program.option('-i, --input <string>', 'path to sources images', './sources');
 program.option('-o, --output <string>', 'path to destination images', './exports');
 program.option(
+  '-t, --type <string>',
+  'Export image type (png, jpeg, webp or auto). Export image extension will be changed accordingly',
+  'png'
+);
+program.option(
+  '-q, --quality <number>',
+  'Export image quality (0-100). Not applicable for png',
+  100
+);
+program.option(
   '-s, --strength <number>',
   'Strength of the NormalMap renderer. Value between 0.01 to 5',
   1
@@ -48,6 +58,8 @@ const {
   invertedRed,
   invertedGreen,
   invertedHeight,
+  type,
+  quality,
 } = options;
 
 let browser;
@@ -73,8 +85,15 @@ const transformAndSaveImage = async (image) => {
   );
   await page.waitForSelector('img');
   const html2 = await page.$('img');
+  const ext = exportPath.split('.').pop();
+  let t = type === 'auto' ? ext : type;
+  t = ['png', 'jpeg', 'webp'].includes(type) ? t : 'png';
+  const path = exportPath.split('.').slice(0, -1).concat(t).join('.');
+  const q = Number.isInteger(parseInt(quality)) ? Math.min(100, Math.max(0, quality)) : 100;
   await html2.screenshot({
-    path: exportPath,
+    path,
+    type: t,
+    quality: t !== 'png' ? q : undefined,
   });
 };
 

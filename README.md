@@ -40,6 +40,8 @@ Options:
                                    "./sources")
   -o, --output <string>            path to destination images (default:
                                    "./exports")
+  -t, --type <string>              Export image type. Auto means it will try to stick to source image type. Warning : forcing a type will not keep the source extension ["png" |"jpeg"|"webp"|"auto"] (default: "png")
+  -q, --quality <number>           Export image quality [0-100]. Not applicable for png. (default: 100)
   -s, --strength <number>          Strength of the NormalMap renderer. Value
                                    between 0.01 to 5 (default: 1)
   -l, --level <number>             Level of the NormalMap renderer. Value
