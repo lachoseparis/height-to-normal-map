@@ -72,8 +72,12 @@ export const createFolderFromPathFile = async (filePath) => {
 };
 
 export const deleteTempFolder = () => {
-  const pathTemp = path.join(__dirname, './temp');
-  rimraf.sync(pathTemp);
+  try {
+    const pathTemp = path.join(__dirname, './temp');
+    rimraf.sync(pathTemp);
+  } catch (error) {
+    console.error('Delete temp folder failed: ' + error);
+  }
 };
 
 export const copySourcesToTemp = async (sources) => {
