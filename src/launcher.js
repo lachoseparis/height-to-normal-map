@@ -2,6 +2,7 @@ import puppeteer from 'puppeteer';
 import handler from 'serve-handler';
 import http from 'http';
 import { Command } from 'commander';
+
 import {
   parseTempFolder,
   createFolderFromPathFile,
@@ -118,8 +119,6 @@ export const execute = async () => {
     await browser.close();
   }
   deleteTempFolder();
-
-  process.exit(); // eslint-disable-line
 };
 
 export default execute;
