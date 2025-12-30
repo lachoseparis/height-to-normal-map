@@ -1,10 +1,11 @@
-import { readdir, lstat, mkdir } from 'fs/promises';
+import { readdir, lstat, mkdir, mkdtemp } from 'fs/promises';
 import fsExists from 'fs.promises.exists';
 import { promisify } from 'util';
 import { createRequire } from 'module';
 import copy from 'recursive-copy';
 import rimraf from 'rimraf';
 import path from 'path';
+import os from 'os';
 
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -16,9 +17,22 @@ var sizeOf = promisify(require('image-size'));
 const { forEach } = require('p-iteration');
 const baseFolder = '/sources';
 
+// Store the temporary directory path for this run
+let tempDirPath = null;
+let exportsDirPath = null;
+
+export const initializeTempDirectory = async () => {
+  tempDirPath = await mkdtemp(path.join(os.tmpdir(), 'height-to-normal-'));
+  exportsDirPath = path.join(tempDirPath, 'exports');
+  await mkdir(exportsDirPath, { recursive: true });
+  return tempDirPath;
+};
+
 export const parseTempFolder = async () => {
-  const pathTemp = path.join(__dirname, './temp');
-  const lImages = parseFolder(pathTemp);
+  if (!tempDirPath) {
+    throw new Error('Temp directory not initialized. Call initializeTempDirectory() first.');
+  }
+  const lImages = parseFolder(tempDirPath);
   return lImages;
 };
 
@@ -27,7 +41,8 @@ export const parseFolder = async (folder, oImages = []) => {
     const elements = await readdir(folder);
     await forEach(elements, async (element) => {
       const filePath = folder + '/' + element;
-      const exportPath = filePath.replace('/temp', '/exports');
+      const relativePath = filePath.replace(tempDirPath, '');
+      const exportPath = path.join(exportsDirPath, relativePath);
 
       const fileName = element.split('.')[0];
       const stat = await lstat(filePath);
@@ -42,12 +57,16 @@ export const parseFolder = async (folder, oImages = []) => {
             const fileId = folder + '/' + fileName;
             const id = fileId.replace(baseFolder, '').replace('/', '').replace(/\//g, '-');
 
+            // Create a URL path for the HTTP server
+            const relativePath = filePath.replace(tempDirPath, '').replace(/\\/g, '/');
+            const srcUrl = `/temp-files${relativePath}`;
+
             oImages.push({
               ...oImages[id],
               ...dimensions,
               exportPath,
               filePath,
-              src: filePath.replace(__dirname, ''),
+              src: srcUrl,
             });
             // console.info('dim', id, oImages[id]);
           } catch (e) {
@@ -73,33 +92,52 @@ export const createFolderFromPathFile = async (filePath) => {
 
 export const deleteTempFolder = () => {
   try {
-    const pathTemp = path.join(__dirname, './temp');
-    rimraf.sync(pathTemp);
+    if (tempDirPath) {
+      rimraf.sync(tempDirPath);
+      tempDirPath = null;
+      exportsDirPath = null;
+    }
   } catch (error) {
     console.error('Delete temp folder failed: ' + error);
   }
 };
 
 export const copySourcesToTemp = async (sources) => {
-  const pathTemp = path.join(__dirname, './temp');
-  rimraf.sync(pathTemp);
-  await mkdir(pathTemp);
+  if (!tempDirPath) {
+    throw new Error('Temp directory not initialized. Call initializeTempDirectory() first.');
+  }
+  const sourcePath = path.resolve(process.cwd(), sources);
   try {
-    await copy(`${sources}`, pathTemp);
+    await copy(sourcePath, tempDirPath);
   } catch (error) {
     console.error('Copy failed: ' + error);
+    throw error;
   }
 };
 
 export const copyToFinalFolder = async (dest) => {
-  const pathExports = path.join(__dirname, './exports');
+  if (!exportsDirPath) {
+    throw new Error('Exports directory not initialized.');
+  }
+
   const pathDest = path.resolve(process.cwd(), dest);
-  rimraf.sync(pathDest);
+
+  // Check if exports directory exists and has content
+  const exportsExists = await fsExists(exportsDirPath);
+  if (!exportsExists) {
+    console.error('Copy failed: Exports directory does not exist at', exportsDirPath);
+    return;
+  }
+
   try {
-    await copy(`${pathExports}`, pathDest);
-    rimraf.sync(pathExports);
+    // Ensure destination directory exists
+    await mkdir(pathDest, { recursive: true });
+
+    // Copy from exports to destination
+    await copy(exportsDirPath, pathDest, { overwrite: true });
   } catch (error) {
     console.error('Copy failed: ' + error);
+    throw error;
   }
 };
 
@@ -117,6 +155,10 @@ export const deleteFile = async (filePath) => {
 
 export const getAbsoluteDistPath = () => {
   return __dirname;
+};
+
+export const getTempDirPath = () => {
+  return tempDirPath;
 };
 
 export default parseFolder;

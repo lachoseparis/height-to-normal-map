@@ -56,6 +56,8 @@ Options:
   -ir, --invertedRed <boolean>     Invert red value (default: false)
   -ig, --invertedGreen <boolean>   Invert green value (default: false)
   -ih, --invertedHeight <boolean>  Invert height value (default: false)
+  --no-sandbox                     Pass --no-sandbox to Puppeteer (default: false)
+  --disable-setuid-sandbox         Pass --disable-setuid-sandbox to Puppeteer (default: false)
   -h, --help                       display help for command
 
 

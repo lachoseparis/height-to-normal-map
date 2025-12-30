@@ -2,6 +2,8 @@ import puppeteer from 'puppeteer';
 import handler from 'serve-handler';
 import http from 'http';
 import { Command } from 'commander';
+import { readFile } from 'fs/promises';
+import path from 'path';
 
 import {
   parseTempFolder,
@@ -10,6 +12,8 @@ import {
   copyToFinalFolder,
   deleteTempFolder,
   getAbsoluteDistPath,
+  initializeTempDirectory,
+  getTempDirPath,
 } from './utils/files.js';
 const program = new Command();
 
@@ -44,6 +48,8 @@ program.option(
 program.option('-ir, --invertedRed <boolean>', 'Invert red value', false);
 program.option('-ig, --invertedGreen <boolean>', 'Invert green value', false);
 program.option('-ih, --invertedHeight <boolean>', 'Invert height value', false);
+program.option('--no-sandbox', 'Pass --no-sandbox to Puppeteer', false);
+program.option('--disable-setuid-sandbox', 'Pass --disable-setuid-sandbox to Puppeteer', false);
 
 program.parse(process.argv);
 
@@ -61,16 +67,41 @@ const {
   invertedHeight,
   type,
   quality,
+  noSandbox,
+  disableSetuidSandbox,
 } = options;
 
 let browser;
 let page;
 let images;
 
-const server = http.createServer((request, response) => {
-  return handler(request, response, {
-    public: getAbsoluteDistPath(),
-  });
+const server = http.createServer(async (request, response) => {
+  // Check if this is a request for a temp file (starts with /temp-files/)
+  if (request.url.startsWith('/temp-files/')) {
+    try {
+      const tempDir = getTempDirPath();
+      if (!tempDir) {
+        response.writeHead(404);
+        response.end('Temp directory not initialized');
+        return;
+      }
+      // Remove /temp-files/ prefix and get the actual file path
+      const filePath = decodeURIComponent(request.url.replace('/temp-files/', ''));
+      const fullPath = path.join(tempDir, filePath);
+
+      const fileContent = await readFile(fullPath);
+      response.writeHead(200);
+      response.end(fileContent);
+    } catch (error) {
+      response.writeHead(404);
+      response.end('File not found: ' + error.message);
+    }
+  } else {
+    // Serve static files from dist directory
+    return handler(request, response, {
+      public: getAbsoluteDistPath(),
+    });
+  }
 });
 server.listen(port);
 
@@ -107,18 +138,35 @@ const transformImages = async () => {
 };
 
 export const execute = async () => {
-  await copySourcesToTemp(input);
-  images = await parseTempFolder(); // eslint-disable-line
-  console.info('transforming', images.length, 'images');
-  if (images.length > 0) {
-    browser = await puppeteer.launch();
-    page = await browser.newPage();
-    await page.goto(`http://localhost:${port}`);
-    await transformImages();
-    await copyToFinalFolder(output);
-    await browser.close();
+  try {
+    await initializeTempDirectory();
+    await copySourcesToTemp(input);
+    images = await parseTempFolder(); // eslint-disable-line
+    console.info('transforming', images.length, 'images');
+    if (images.length > 0) {
+      const puppeteerArgs = [];
+      if (noSandbox) puppeteerArgs.push('--no-sandbox');
+      if (disableSetuidSandbox) puppeteerArgs.push('--disable-setuid-sandbox');
+
+      browser = await puppeteer.launch({
+        args: puppeteerArgs,
+      });
+      page = await browser.newPage();
+      await page.goto(`http://localhost:${port}`);
+      await transformImages();
+      await copyToFinalFolder(output);
+      await browser.close();
+    }
+  } catch (error) {
+    console.error('Error during execution:', error);
+    if (browser) {
+      await browser.close();
+    }
+    throw error;
+  } finally {
+    deleteTempFolder();
+    server.close();
   }
-  deleteTempFolder();
 };
 
 export default execute;

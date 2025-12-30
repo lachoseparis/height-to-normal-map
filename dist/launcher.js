@@ -2,13 +2,14 @@ import puppeteer from 'puppeteer';
 import handler from 'serve-handler';
 import http from 'http';
 import { Command } from 'commander';
-import { readdir, lstat, mkdir } from 'fs/promises';
+import { mkdtemp, mkdir, readdir, lstat, readFile } from 'fs/promises';
+import path, { dirname } from 'path';
 import fsExists from 'fs.promises.exists';
 import { promisify } from 'util';
 import { createRequire } from 'module';
 import copy from 'recursive-copy';
 import rimraf from 'rimraf';
-import path, { dirname } from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,9 +20,22 @@ var sizeOf = promisify(require('image-size'));
 const { forEach } = require('p-iteration');
 const baseFolder = '/sources';
 
+// Store the temporary directory path for this run
+let tempDirPath = null;
+let exportsDirPath = null;
+
+const initializeTempDirectory = async () => {
+  tempDirPath = await mkdtemp(path.join(os.tmpdir(), 'height-to-normal-'));
+  exportsDirPath = path.join(tempDirPath, 'exports');
+  await mkdir(exportsDirPath, { recursive: true });
+  return tempDirPath;
+};
+
 const parseTempFolder = async () => {
-  const pathTemp = path.join(__dirname, './temp');
-  const lImages = parseFolder(pathTemp);
+  if (!tempDirPath) {
+    throw new Error('Temp directory not initialized. Call initializeTempDirectory() first.');
+  }
+  const lImages = parseFolder(tempDirPath);
   return lImages;
 };
 
@@ -30,7 +44,8 @@ const parseFolder = async (folder, oImages = []) => {
     const elements = await readdir(folder);
     await forEach(elements, async (element) => {
       const filePath = folder + '/' + element;
-      const exportPath = filePath.replace('/temp', '/exports');
+      const relativePath = filePath.replace(tempDirPath, '');
+      const exportPath = path.join(exportsDirPath, relativePath);
 
       const fileName = element.split('.')[0];
       const stat = await lstat(filePath);
@@ -45,12 +60,16 @@ const parseFolder = async (folder, oImages = []) => {
             const fileId = folder + '/' + fileName;
             const id = fileId.replace(baseFolder, '').replace('/', '').replace(/\//g, '-');
 
+            // Create a URL path for the HTTP server
+            const relativePath = filePath.replace(tempDirPath, '').replace(/\\/g, '/');
+            const srcUrl = `/temp-files${relativePath}`;
+
             oImages.push({
               ...oImages[id],
               ...dimensions,
               exportPath,
               filePath,
-              src: filePath.replace(__dirname, ''),
+              src: srcUrl,
             });
             // console.info('dim', id, oImages[id]);
           } catch (e) {
@@ -76,38 +95,61 @@ const createFolderFromPathFile = async (filePath) => {
 
 const deleteTempFolder = () => {
   try {
-    const pathTemp = path.join(__dirname, './temp');
-    rimraf.sync(pathTemp);
+    if (tempDirPath) {
+      rimraf.sync(tempDirPath);
+      tempDirPath = null;
+      exportsDirPath = null;
+    }
   } catch (error) {
     console.error('Delete temp folder failed: ' + error);
   }
 };
 
 const copySourcesToTemp = async (sources) => {
-  const pathTemp = path.join(__dirname, './temp');
-  rimraf.sync(pathTemp);
-  await mkdir(pathTemp);
+  if (!tempDirPath) {
+    throw new Error('Temp directory not initialized. Call initializeTempDirectory() first.');
+  }
+  const sourcePath = path.resolve(process.cwd(), sources);
   try {
-    await copy(`${sources}`, pathTemp);
+    await copy(sourcePath, tempDirPath);
   } catch (error) {
     console.error('Copy failed: ' + error);
+    throw error;
   }
 };
 
 const copyToFinalFolder = async (dest) => {
-  const pathExports = path.join(__dirname, './exports');
+  if (!exportsDirPath) {
+    throw new Error('Exports directory not initialized.');
+  }
+
   const pathDest = path.resolve(process.cwd(), dest);
-  rimraf.sync(pathDest);
+
+  // Check if exports directory exists and has content
+  const exportsExists = await fsExists(exportsDirPath);
+  if (!exportsExists) {
+    console.error('Copy failed: Exports directory does not exist at', exportsDirPath);
+    return;
+  }
+
   try {
-    await copy(`${pathExports}`, pathDest);
-    rimraf.sync(pathExports);
+    // Ensure destination directory exists
+    await mkdir(pathDest, { recursive: true });
+
+    // Copy from exports to destination
+    await copy(exportsDirPath, pathDest, { overwrite: true });
   } catch (error) {
     console.error('Copy failed: ' + error);
+    throw error;
   }
 };
 
 const getAbsoluteDistPath = () => {
   return __dirname;
+};
+
+const getTempDirPath = () => {
+  return tempDirPath;
 };
 
 const program = new Command();
@@ -143,6 +185,8 @@ program.option(
 program.option('-ir, --invertedRed <boolean>', 'Invert red value', false);
 program.option('-ig, --invertedGreen <boolean>', 'Invert green value', false);
 program.option('-ih, --invertedHeight <boolean>', 'Invert height value', false);
+program.option('--no-sandbox', 'Pass --no-sandbox to Puppeteer', false);
+program.option('--disable-setuid-sandbox', 'Pass --disable-setuid-sandbox to Puppeteer', false);
 
 program.parse(process.argv);
 
@@ -160,16 +204,41 @@ const {
   invertedHeight,
   type,
   quality,
+  noSandbox,
+  disableSetuidSandbox,
 } = options;
 
 let browser;
 let page;
 let images;
 
-const server = http.createServer((request, response) => {
-  return handler(request, response, {
-    public: getAbsoluteDistPath(),
-  });
+const server = http.createServer(async (request, response) => {
+  // Check if this is a request for a temp file (starts with /temp-files/)
+  if (request.url.startsWith('/temp-files/')) {
+    try {
+      const tempDir = getTempDirPath();
+      if (!tempDir) {
+        response.writeHead(404);
+        response.end('Temp directory not initialized');
+        return;
+      }
+      // Remove /temp-files/ prefix and get the actual file path
+      const filePath = decodeURIComponent(request.url.replace('/temp-files/', ''));
+      const fullPath = path.join(tempDir, filePath);
+
+      const fileContent = await readFile(fullPath);
+      response.writeHead(200);
+      response.end(fileContent);
+    } catch (error) {
+      response.writeHead(404);
+      response.end('File not found: ' + error.message);
+    }
+  } else {
+    // Serve static files from dist directory
+    return handler(request, response, {
+      public: getAbsoluteDistPath(),
+    });
+  }
 });
 server.listen(port);
 
@@ -206,18 +275,35 @@ const transformImages = async () => {
 };
 
 const execute = async () => {
-  await copySourcesToTemp(input);
-  images = await parseTempFolder(); // eslint-disable-line
-  console.info('transforming', images.length, 'images');
-  if (images.length > 0) {
-    browser = await puppeteer.launch();
-    page = await browser.newPage();
-    await page.goto(`http://localhost:${port}`);
-    await transformImages();
-    await copyToFinalFolder(output);
-    await browser.close();
+  try {
+    await initializeTempDirectory();
+    await copySourcesToTemp(input);
+    images = await parseTempFolder(); // eslint-disable-line
+    console.info('transforming', images.length, 'images');
+    if (images.length > 0) {
+      const puppeteerArgs = [];
+      if (noSandbox) puppeteerArgs.push('--no-sandbox');
+      if (disableSetuidSandbox) puppeteerArgs.push('--disable-setuid-sandbox');
+
+      browser = await puppeteer.launch({
+        args: puppeteerArgs,
+      });
+      page = await browser.newPage();
+      await page.goto(`http://localhost:${port}`);
+      await transformImages();
+      await copyToFinalFolder(output);
+      await browser.close();
+    }
+  } catch (error) {
+    console.error('Error during execution:', error);
+    if (browser) {
+      await browser.close();
+    }
+    throw error;
+  } finally {
+    deleteTempFolder();
+    server.close();
   }
-  deleteTempFolder();
 };
 
 export { execute as default, execute };
